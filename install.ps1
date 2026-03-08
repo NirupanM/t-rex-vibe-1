@@ -101,7 +101,7 @@ function Install-TRex {
     Write-Host "  ► Start vibe coding! 🚀" -ForegroundColor White
     Write-Host ""
     Write-Host "  To uninstall:" -ForegroundColor DarkGray
-    Write-Host "  irm https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/uninstall.ps1 | iex" -ForegroundColor DarkGray
+    Write-Host "  irm https://raw.githubusercontent.com/NirupanM/t-rex-vibe-1/main/uninstall.ps1 | iex" -ForegroundColor DarkGray
     Write-Host ""
 }
 
