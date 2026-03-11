@@ -34,7 +34,10 @@ function Test-Admin {
 function Add-ToUserPath {
     param([string]$Dir)
     $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-    if ($currentPath -notlike "*$Dir*") {
+    if ([string]::IsNullOrWhiteSpace($currentPath)) {
+        [Environment]::SetEnvironmentVariable("PATH", $Dir, "User")
+        Write-Host "  ✅ Added to PATH" -ForegroundColor Green
+    } elseif ($currentPath -notlike "*$Dir*") {
         [Environment]::SetEnvironmentVariable("PATH", "$currentPath;$Dir", "User")
         Write-Host "  ✅ Added to PATH" -ForegroundColor Green
     } else {
@@ -69,25 +72,40 @@ function Install-TRex {
     Add-ToUserPath -Dir $INSTALL_DIR
 
     # Step 4 — Refresh current session PATH so it works immediately
-    $env:PATH = [Environment]::GetEnvironmentVariable("PATH", "User") + ";" +
-                [Environment]::GetEnvironmentVariable("PATH", "Machine")
+    $userPath    = [Environment]::GetEnvironmentVariable("PATH", "User")
+    $machinePath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
+    $env:PATH    = "$userPath;$machinePath"
 
-    # Step 5 — Ask for API key and save .env
+    # Step 5 — Ask for API keys and save .env
     Write-Host ""
-    Write-Host "  🔑 Anthropic API Key Setup" -ForegroundColor Cyan
+    Write-Host "  🔑 API Key Setup" -ForegroundColor Cyan
     Write-Host "  ──────────────────────────────────────────" -ForegroundColor DarkGray
-    Write-Host "  Get your key at: https://console.anthropic.com" -ForegroundColor DarkGray
+    Write-Host "  Anthropic: https://console.anthropic.com" -ForegroundColor DarkGray
+    Write-Host "  OpenAI:    https://platform.openai.com/api-keys" -ForegroundColor DarkGray
     Write-Host ""
-    $apiKey = Read-Host "  Enter your Anthropic API key (or press Enter to skip)"
 
-    if ($apiKey -ne "") {
-        $envFile = Join-Path $INSTALL_DIR ".env"
-        Set-Content -Path $envFile -Value "ANTHROPIC_API_KEY=$apiKey"
-        # Also set for current session
-        $env:ANTHROPIC_API_KEY = $apiKey
-        Write-Host "  ✅ API key saved" -ForegroundColor Green
+    $anthropicKey = Read-Host "  Enter your Anthropic API key (or press Enter to skip)"
+    $openaiKey    = Read-Host "  Enter your OpenAI API key (or press Enter to skip)"
+
+    $envFile = Join-Path $INSTALL_DIR ".env"
+    $envLines = @()
+
+    if (-not [string]::IsNullOrWhiteSpace($anthropicKey)) {
+        $envLines += "ANTHROPIC_API_KEY=$anthropicKey"
+        $env:ANTHROPIC_API_KEY = $anthropicKey
+        Write-Host "  ✅ Anthropic key saved" -ForegroundColor Green
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($openaiKey)) {
+        $envLines += "OPENAI_API_KEY=$openaiKey"
+        $env:OPENAI_API_KEY = $openaiKey
+        Write-Host "  ✅ OpenAI key saved" -ForegroundColor Green
+    }
+
+    if ($envLines.Count -gt 0) {
+        Set-Content -Path $envFile -Value $envLines
     } else {
-        Write-Host "  ⚠️  Skipped. Run 't-rex' and enter key manually later." -ForegroundColor Yellow
+        Write-Host "  ⚠️  No keys entered. You can add them later in $INSTALL_DIR\.env" -ForegroundColor Yellow
     }
 
     # Done!
